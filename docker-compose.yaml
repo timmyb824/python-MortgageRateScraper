@@ -1,0 +1,12 @@
+services:
+  mortgageratescaper:
+    # image: docker.io/timmyb824/python-mortgageratescaper:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mortgageratescaper
+    environment:
+      # - APPRISE_DISCORD=${APPRISE_DISCORD}
+      - APPRISE_NTFY=${APPRISE_NTFY}
+      - HEALTHCHECK_URL=${HEALTHCHECK_URL} # Optional
+    restart: unless-stopped
