@@ -14,6 +14,7 @@ HEALTHCHECK_URL = os.getenv("HEALTHCHECK_URL")
 def main():
     try:
         if mortgage_rates := scrape_mortgage_rates():
+            logger.info(f"Mortgage rate: {mortgage_rates}")
             notification_message = format_notification(mortgage_rates)
             send_notification(notification_message)
 
@@ -29,7 +30,7 @@ def main():
 
 def run_scheduler():
     # schedule.every(5).seconds.do(main) # for testing
-    schedule.every().day.at("09:00", "America/New_York").do(main)
+    schedule.every().day.at("18:35", "America/New_York").do(main)
     while True:
         schedule.run_pending()
         time.sleep(1)
