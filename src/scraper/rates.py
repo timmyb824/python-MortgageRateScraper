@@ -1,5 +1,4 @@
 import re
-import json
 from dataclasses import dataclass
 from typing import Optional
 import requests
