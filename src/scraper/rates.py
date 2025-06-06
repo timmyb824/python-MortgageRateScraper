@@ -58,46 +58,66 @@ def parse_primary_mortgage_rates(soup: BeautifulSoup) -> list[MortgageRate]:
     return rates
 
 
-def parse_freddie_mac_html(soup: BeautifulSoup) -> list[MortgageRate]:
-    """Parse the Freddie Mac PMMS page to extract mortgage rates."""
+# def parse_freddie_mac_html(soup: BeautifulSoup) -> list[MortgageRate]:
+#     # sourcery skip: extract-method
+#     """Parse the Freddie Mac PMMS page to extract mortgage rates."""
+#     rates = []
+#     try:
+#         # Extract the headline and date
+#         headline = soup.find("h3").get_text(strip=True)
+#         date = soup.find("h5").get_text(strip=True)
+
+#         # Log these for reference
+#         logger.info(f"Freddie Mac headline: {headline}")
+#         logger.info(f"Freddie Mac date: {date}")
+
+#         # Extract rate data from the Excel file link
+#         excel_link = soup.find(
+#             "a", href=True, text="Current Mortgage Rates Data Since 1971"
+#         )
+#         excel_url = (
+#             f"https://www.freddiemac.com{excel_link['href']}" if excel_link else None
+#         )
+
+#         if excel_url:
+#             logger.info(f"Excel file URL: {excel_url}")
+#             rates.append(MortgageRate(type="Excel Data Link", rate=None, change=None))
+#         else:
+#             logger.warning("Excel file link not found.")
+#     except Exception as e:
+#         logger.error(f"Error parsing Freddie Mac HTML: {e}")
+#     return rates
+
+
+def parse_fred_mortgage_rate(soup: BeautifulSoup) -> list[MortgageRate]:
+    """Parse the FRED page to extract the 30-year fixed mortgage rate."""
     rates = []
     try:
-        # Extract the headline and date
-        headline = soup.find("h3").get_text(strip=True)
-        date = soup.find("h5").get_text(strip=True)
-
-        # Log these for reference
-        logger.info(f"Freddie Mac headline: {headline}")
-        logger.info(f"Freddie Mac date: {date}")
-
-        # Extract rate data from the Excel file link
-        excel_link = soup.find("a", href=True, text="Current Mortgage Rates Data Since 1971")
-        excel_url = f"https://www.freddiemac.com{excel_link['href']}" if excel_link else None
-
-        if excel_url:
-            logger.info(f"Excel file URL: {excel_url}")
-            rates.append(MortgageRate(type="Excel Data Link", rate=None, change=None))
+        if value_span := soup.find("span", class_="series-meta-observation-value"):
+            rate = value_span.get_text(strip=True)
+            rates.append(
+                MortgageRate(type="30-Year Fixed", rate=safe_float(rate), change=None)
+            )
+            logger.info(f"Extracted FRED rate: {rate}")
         else:
-            logger.warning("Excel file link not found.")
+            logger.error("Unable to locate the current rate value on FRED.")
     except Exception as e:
-        logger.error(f"Error parsing Freddie Mac HTML: {e}")
+        logger.error(f"Error parsing FRED HTML: {e}")
     return rates
 
 
 def scrape_mortgage_rates() -> list[MortgageRate]:
+    # sourcery skip: use-named-expression
     """Scrape mortgage rates from multiple sources with fallback logic."""
-    # Define data source URLs
     primary_url = "https://www.mortgagenewsdaily.com/mortgage-rates"
-    fallback_url = "https://www.freddiemac.com/pmms"
+    fallback_url = "https://fred.stlouisfed.org/series/MORTGAGE30US"  # "https://www.freddiemac.com/pmms"
 
     # Try the primary source
     response = send_request(primary_url)
+    # response = ""  # for testing backup
     if response:
         soup = BeautifulSoup(response.text, "html.parser")
-        rates = parse_primary_mortgage_rates(soup)
-
-        # If rates are found, return them; otherwise, proceed to fallback
-        if rates:
+        if rates := parse_primary_mortgage_rates(soup):
             logger.info("Successfully retrieved rates from the primary source.")
             return rates
         else:
@@ -108,12 +128,11 @@ def scrape_mortgage_rates() -> list[MortgageRate]:
     response = send_request(fallback_url)
     if response:
         soup = BeautifulSoup(response.text, "html.parser")
-        rates = parse_freddie_mac_html(soup)
-        if rates:
-            logger.info("Successfully retrieved rates from Freddie Mac PMMS.")
+        if rates := parse_fred_mortgage_rate(soup):
+            logger.info("Successfully retrieved rates from FRED.")
             return rates
         else:
-            logger.warning("Freddie Mac PMMS returned no usable data.")
+            logger.warning("FRED returned no usable data.")
 
     # If all sources fail, return an empty list
     logger.error("Both primary and fallback sources failed.")
