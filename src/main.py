@@ -38,4 +38,4 @@ def run_scheduler():
 
 if __name__ == "__main__":
     logger.info("Starting mortgage rate scraper")
-    run_scheduler()
+    main()
