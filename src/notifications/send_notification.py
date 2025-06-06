@@ -5,7 +5,7 @@ import apprise
 from src.logs.log_handler import logger
 
 
-def send_notification(message: str) -> None:
+def send_notification(message: str, title: str = "Current Mortgage Rates") -> None:
     """Send notification using Apprise with environment variables."""
 
     apobj = apprise.Apprise()
@@ -15,7 +15,7 @@ def send_notification(message: str) -> None:
             logger.info(f"Adding {key} to notification")
             apobj.add(value)
     try:
-        if _ := apobj.notify(body=message, title="Current Mortgage Rates"):
+        if _ := apobj.notify(body=message, title=title):
             logger.info("Notification sent successfully")
         else:
             logger.error("Apprise notification failed to send")

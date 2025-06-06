@@ -1,3 +1,5 @@
+import re
+import json
 from dataclasses import dataclass
 from typing import Optional
 import requests
@@ -145,7 +147,15 @@ def format_notification(rates: list[MortgageRate]) -> str:
     for rate in rates:
         if rate.rate is None or "ARM" in rate.type:
             continue
+        # Remove all types of quotes (straight and curly) from the rate type
+        clean_type = re.sub(
+            r"[\"\'“”‘’]", "", rate.type
+        )  # Remove all quote-like characters
+        clean_type = clean_type.replace(
+            ":", ""
+        ).strip()  # Also remove colons from type just to be safe
         rate_str = f"{rate.rate:.2f}%" if rate.rate is not None else "N/A"
         change_str = f"({rate.change:+.2f})" if rate.change is not None else ""
-        notification += f"{rate.type}: {rate_str} {change_str}\n"
+        logger.debug(f"Formatting: type='{rate.type}', cleaned='{clean_type}'")
+        notification += f"{clean_type}: {rate_str} {change_str}\n"
     return notification
