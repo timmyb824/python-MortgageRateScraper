@@ -14,6 +14,7 @@ HEALTHCHECK_URL = os.getenv("HEALTHCHECK_URL")
 def main():
     try:
         if mortgage_rates := scrape_mortgage_rates():
+            logger.info(f"Mortgage rate(s) found: {mortgage_rates}")
             notification_message = format_notification(mortgage_rates)
             send_notification(notification_message)
 
