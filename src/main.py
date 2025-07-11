@@ -1,7 +1,4 @@
 import os
-import time
-
-import schedule
 
 from src.healthcheck import send_health_check
 from src.logs.log_handler import logger
@@ -26,14 +23,6 @@ def main():
             )
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-
-
-def run_scheduler():
-    # schedule.every(5).seconds.do(main) # for testing
-    schedule.every().day.at("09:00", "America/New_York").do(main)
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
 
 
 if __name__ == "__main__":
